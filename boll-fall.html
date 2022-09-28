@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.2/p5.min.js"
+      integrity="sha512-rCZdHNB0AePry6kAnKAVFMRfWPmUXSo+/vlGtrOUvhsxD0Punm/xWbEh+8vppPIOzKB9xnk42yCRZ5MD/jvvjQ=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    ></script>
+  </head>
+  <body>
+    <section id="app">
+      <sidemenu></sidemenu>
+      <main><h3>{{title}}</h3></main>
+    </section>
+    <link rel="stylesheet" href="style.css" />
+    <script src="https://cdn.jsdelivr.net/npm/vue@2"></script>
+    <script src="layout.js"></script>
+    <script>
+      var app = new Vue({
+        el: "#app",
+        data: {
+          title: "ボール落下",
+        },
+      });
+    </script>
+    <script>
+      let b_x = 300;
+      let b_y = 30;
+      let b_dx = 0;
+      let b_dy = 0;
+      let flag = 0;
+      let score = 0;
+      let hp = 1;
+      let status = 1;
+
+      class Effect {
+        constructor() {
+          this.x = 0;
+          this.y = 0;
+          this.score = 0;
+          this.t = 0;
+        }
+      }
+      let effectList = [];
+
+      let slotList = [
+        0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 1, -1, 1, -1, 1, 1, 1, -3, 1, 1, 3, 5, 1,
+        5, 3, 1, 0, -1, 0, 1, 3, 1, -1, 1, 3, -1, 1, 3, 1, -1,
+      ];
+      function setup() {
+        createCanvas(600, 400);
+        gameInit();
+      }
+
+      function draw() {
+        background(255, 200, 0);
+
+        textAlign(CENTER, CENTER);
+        textSize(128);
+        fill(100);
+        text(score, width / 2, height / 2);
+
+        for (let i = 0; i < hp; i++) {
+          fill(255);
+          ellipse(550 - i * 5, 20, 20, 20);
+        }
+        for (let i = 0; i < 40; i++) {
+          let x = (i % 5) * 100 + 70;
+          let y = int(i / 5) * 40 + 80;
+
+          if (int(i / 5) % 2 == 1) {
+            x += 50;
+          }
+
+          if (dist(x, y, b_x, b_y) < 30 / 2 + 20 / 2) {
+            let rad = atan2(b_y - y, b_x - x);
+            b_dx = cos(rad) * 5 + random(-1, 1);
+            b_dy = sin(rad) * 5 + random(-1, 1);
+            score += slotList[i];
+            if (slotList[i] != 0) {
+              addEffect(x, y, slotList[i]);
+            }
+          }
+          fill(0, 200, 255);
+          if (slotList[i] == 0) {
+            fill(100);
+          }
+          if (slotList[i] < 0) {
+            fill(255, 100, 0);
+          }
+          ellipse(x, y, 20, 20);
+
+          textAlign(CENTER, CENTER);
+          textSize(16);
+          fill(255);
+          if (slotList[i] != 0) {
+            text(slotList[i], x, y);
+          }
+        }
+
+        if (flag == 0) {
+          b_x = mouseX;
+          b_y = 30;
+        }
+        if (flag == 1) {
+          b_dx *= 0.99;
+          b_dy += 1;
+          b_x += b_dx;
+          b_y += b_dy;
+
+          if (b_y > height) {
+            flag = 0;
+            b_dx = 0;
+            b_dy = 0;
+            angle = 0;
+            hp -= 1;
+            if (hp < 0) {
+              finish();
+              flag = 1;
+            }
+          }
+        }
+
+        push();
+        translate(b_x, b_y);
+        // rotate(atan2(b_dy, b_dx));
+        fill(255);
+        ellipse(0, 0, 30, 30);
+        fill(30);
+        ellipse(0 - 5, 0 - 3, 3, 3);
+        ellipse(0 + 5, 0 - 3, 3, 3);
+        pop();
+
+        for (let i = 0; i < effectList.length; i++) {
+          let e = effectList[i];
+          e.t += 1;
+          let alpha = 1 - e.t / 60;
+          if (alpha < 0) {
+            continue;
+          }
+          let message = "";
+          if (e.score > 0) {
+            message = "+" + e.score;
+            fill(255, 255, 0, 255 * alpha);
+          }
+          if (e.score < 0) {
+            message = e.score;
+            fill(255, 50, 0, 255 * alpha);
+          }
+          textSize(24);
+          text(message, e.x, e.y - e.t);
+        }
+
+        if (status == 99) {
+          fill(255, 200);
+          rect(0, 0, width, height);
+
+          fill(100);
+          textSize(64);
+          text("RESULT", width / 2, height / 2 - 100);
+          textSize(128);
+          text(score, width / 2, height / 2);
+
+          textSize(32);
+          text("Rank " + getRank(score), width / 2, height / 2 + 80);
+        }
+      }
+
+      function mousePressed() {
+        if (status == 99) {
+          gameInit();
+        } else {
+          flag = 1;
+        }
+      }
+
+      function gameInit() {
+        b_x = 300;
+        b_y = 30;
+        b_dx = 0;
+        b_dy = 0;
+        flag = 0;
+        score = 0;
+        hp = 4;
+        status = 1;
+      }
+
+      function finish() {
+        status = 99;
+      }
+
+      function getRank(score) {
+        let rank = "D";
+        if (score > 0) {
+          rank = "C";
+        }
+        if (score > 30) {
+          rank = "B";
+        }
+        if (score > 60) {
+          rank = "A";
+        }
+        if (score > 100) {
+          rank = "S";
+        }
+        if (score > 150) {
+          rank = "MASTER";
+        }
+        return rank;
+      }
+
+      function addEffect(x, y, score) {
+        let e = new Effect();
+        e.x = x;
+        e.y = y;
+        e.score = score;
+        effectList.push(e);
+      }
+    </script>
+  </body>
+</html>

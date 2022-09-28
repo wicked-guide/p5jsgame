@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.2/p5.min.js"
+      integrity="sha512-rCZdHNB0AePry6kAnKAVFMRfWPmUXSo+/vlGtrOUvhsxD0Punm/xWbEh+8vppPIOzKB9xnk42yCRZ5MD/jvvjQ=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    ></script>
+  </head>
+  <body>
+    <section id="app">
+      <sidemenu></sidemenu>
+      <main>
+        <h3>{{title}}</h3>
+        <ul>
+          <li>スペースでジャンプ</li>
+        </ul>
+      </main>
+    </section>
+    <link rel="stylesheet" href="style.css" />
+    <script src="https://cdn.jsdelivr.net/npm/vue@2"></script>
+    <script src="layout.js"></script>
+    <script>
+      var app = new Vue({
+        el: "#app",
+        data: {
+          title: "ジャンプタワー",
+        },
+      });
+    </script>
+    <script>
+      let x = 300;
+      let y = 200;
+      let dx = 5;
+      let dy = 0;
+      let score = 0;
+      let camera_y = 0;
+      let t = 0;
+      let jumpCount = 0;
+      let patterns = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 8, 7, 6, 5, 4, 3, 2, 1];
+      let status = 1;
+
+      class Explode {
+        constructor() {
+          this.x = 0;
+          this.y = 0;
+          this.t = 0;
+        }
+      }
+      let explode = null;
+      function setup() {
+        createCanvas(600, 400);
+        init();
+      }
+      function draw() {
+        background(30);
+
+        if (status == 1) {
+          t += 1;
+          dy += 1;
+          x += dx;
+          y += dy;
+        }
+        if (x < 0 || x > width - 30) {
+          dx *= -1;
+          x = constrain(x, 0, width - 30);
+        }
+        for (let tate = 0; tate < 99; tate++) {
+          if (tate > score + 5) {
+            break;
+          }
+          let speed = max(30 - tate, 10);
+          let timing = int(t / speed);
+          let index = timing + tate * 8;
+          let target = patterns[index % patterns.length];
+          let _y = 350 - tate * 250;
+          for (let yoko = 0; yoko < 10; yoko++) {
+            let _x = yoko * 60;
+            if (dy > 0) {
+              // 足元にだけ当たり判定
+              if (isHit(_x, _y, 60, 20, x, y + 20, 30, 10) == 1) {
+                y = _y - 30;
+                dy = 0;
+                jumpCount = 0;
+                if (yoko == target) {
+                  gameOver();
+                } else {
+                  score = tate;
+                }
+              }
+            }
+            fill(255);
+            if (yoko == target) {
+              fill(255, 0, 0);
+            }
+            rect(_x, _y - camera_y, 60, 20);
+          }
+
+          textAlign(CENTER, CENTER);
+          textSize(128);
+          fill(100);
+          text(tate + 1, width / 2, _y - 120 - camera_y);
+          textSize(16);
+          fill(100);
+          text(
+            "Rank " + getRank(tate + 1),
+            width / 2,
+            _y - 120 + 70 - camera_y
+          );
+        }
+
+        fill(255);
+        rect(x, y - camera_y, 30, 30);
+
+        let target_y = score * -250;
+        camera_y += (target_y - camera_y) * 0.1;
+
+        if (explode != null) {
+          explode.t += 1;
+          for (let i = 0; i < 10; i++) {
+            if (explode.t > 60) {
+              break;
+            }
+            let _x = explode.x + cos(radians(i * 36)) * explode.t;
+            let _y = explode.y + sin(radians(i * 36)) * explode.t;
+            let _alpha = 1 - explode.t / 60;
+            fill(255, 255 * _alpha);
+            rect(_x, _y - camera_y, 5, 5);
+          }
+        }
+
+        if (status == 99) {
+          fill(0, 100);
+          rect(0, 0, width, height);
+          textSize(64);
+          fill(255);
+          text("Game Over", width / 2, 50);
+          textSize(32);
+          fill(255);
+          text("Press Enter", width / 2, height - 20);
+        }
+      }
+      function mousePressed() {
+        pressed();
+      }
+      function mouseReleased() {
+        released();
+      }
+      function keyPressed() {
+        pressed();
+        if (status == 99) {
+          if (keyCode == ENTER) {
+            init();
+          }
+        }
+      }
+      function keyReleased() {
+        released();
+      }
+      function pressed() {
+        if (jumpCount < 1) {
+          dy = -25;
+          jumpCount += 1;
+        }
+      }
+      function released() {
+        if (dy < 0) {
+          dy = dy * 0.5;
+        }
+      }
+
+      function getRank(score) {
+        let rank = "E";
+        if (score >= 1) {
+          rank = "D";
+        }
+        if (score >= 5) {
+          rank = "C";
+        }
+        if (score >= 10) {
+          rank = "B";
+        }
+        if (score >= 15) {
+          rank = "B+";
+        }
+        if (score >= 20) {
+          rank = "A";
+        }
+        if (score >= 25) {
+          rank = "A+";
+        }
+        if (score >= 30) {
+          rank = "S";
+        }
+        if (score >= 35) {
+          rank = "S+";
+        }
+        if (score >= 40) {
+          rank = "MASTER";
+        }
+        return rank;
+      }
+
+      function gameOver() {
+        status = 99;
+        explode = new Explode();
+        explode.x = x + 15;
+        explode.y = y + 15;
+
+        x = 999;
+        y = 999;
+      }
+
+      function init() {
+        x = 300;
+        y = 200;
+        dx = 5;
+        dy = 0;
+        score = 0;
+        camera_y = 0;
+        t = 0;
+        jumpCount = 0;
+        status = 1;
+        explode = null;
+      }
+
+      function isHit(px, py, pw, ph, ex, ey, ew, eh) {
+        if (px < ex + ew && px + pw > ex) {
+          if (py < ey + eh && py + ph > ey) {
+            return 1;
+          }
+        }
+        return 0;
+      }
+    </script>
+  </body>
+</html>

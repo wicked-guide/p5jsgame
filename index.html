@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.2/p5.min.js"
+      integrity="sha512-rCZdHNB0AePry6kAnKAVFMRfWPmUXSo+/vlGtrOUvhsxD0Punm/xWbEh+8vppPIOzKB9xnk42yCRZ5MD/jvvjQ=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    ></script>
+  </head>
+  <body>
+    <section id="app">
+      <sidemenu></sidemenu>
+      <main><h3>{{title}}</h3></main>
+    </section>
+    <link rel="stylesheet" href="style.css" />
+    <script src="https://cdn.jsdelivr.net/npm/vue@2"></script>
+    <script src="layout.js"></script>
+    <script>
+      var app = new Vue({
+        el: "#app",
+        data: {
+          title: "左右の箱の合計数を一致させる",
+        },
+      });
+    </script>
+    <script>
+      let slotList = [
+        5, 3, 4, 4, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 3, 2, 7, 2, 1, 1, 2, 1, 1, 2, 1, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0,
+      ];
+
+      let selected = -1;
+      let level = 1;
+      function setup() {
+        createCanvas(600, 400);
+        slotList = createSlotList(levelToCount(level));
+      }
+
+      function draw() {
+        background(255, 200, 0);
+
+        textAlign(CENTER, CENTER);
+        textSize(64);
+        fill(30);
+        text(getSum(slotList, 0, 25), 150, 50);
+        for (let i = 0; i < 25; i++) {
+          let x = 30 + (i % 5) * 50;
+          let y = 100 + int(i / 5) * 50;
+          fill(255);
+          if (selected == i) {
+            fill(255, 100, 0);
+          }
+          if (isClear(slotList) == 1) {
+            fill(0, 255, 255);
+          }
+          rect(x, y, 50, 50);
+          if (slotList[i] > 0) {
+            textAlign(CENTER, CENTER);
+            textSize(24);
+            fill(30);
+            text(slotList[i], x + 25, y + 25);
+          }
+        }
+        textAlign(CENTER, CENTER);
+        textSize(64);
+        fill(30);
+        text(getSum(slotList, 25, 50), 440, 50);
+        for (let i = 0; i < 25; i++) {
+          let x = 320 + (i % 5) * 50;
+          let y = 100 + int(i / 5) * 50;
+          fill(255);
+          if (selected == i + 25) {
+            fill(255, 100, 0);
+          }
+          if (isClear(slotList) == 1) {
+            fill(0, 255, 255);
+          }
+          rect(x, y, 50, 50);
+          if (slotList[i + 25] > 0) {
+            textAlign(CENTER, CENTER);
+            textSize(24);
+            fill(30);
+            text(slotList[i + 25], x + 25, y + 25);
+          }
+        }
+
+        textAlign(CENTER, CENTER);
+        textSize(64);
+        fill(30);
+        if (isClear(slotList) == 0) {
+          text("≠", 300, 50);
+        }
+        if (isClear(slotList) == 1) {
+          text("＝", 300, 50);
+        }
+
+        textAlign(CENTER, CENTER);
+        textSize(24);
+        fill(100);
+        if (level > 10) {
+          text("Level MAX", width / 2, height - 20);
+        } else {
+          text("Level " + level, width / 2, height - 20);
+        }
+      }
+
+      function isClear(slotList) {
+        if (getSum(slotList, 0, 25) == getSum(slotList, 25, 50)) {
+          return 1;
+        }
+        return 0;
+      }
+
+      function getSum(slotList, from, to) {
+        let sum = 0;
+        for (let i = 0; i < 50; i++) {
+          if (i >= from && i < to) {
+            sum += slotList[i];
+          }
+        }
+        return sum;
+      }
+
+      function mousePressed() {
+        if (isClear(slotList) == 1) {
+          level += 1;
+          slotList = createSlotList(levelToCount(level));
+          return;
+        }
+        for (let i = 0; i < 25; i++) {
+          let x = 30 + (i % 5) * 50;
+          let y = 100 + int(i / 5) * 50;
+          if (x < mouseX && x + 50 > mouseX) {
+            if (y < mouseY && y + 50 > mouseY) {
+              if (selected == -1) {
+                selected = i;
+              } else {
+                exchange(selected, i);
+                selected = -1;
+              }
+            }
+          }
+        }
+        for (let i = 0; i < 25; i++) {
+          let x = 320 + (i % 5) * 50;
+          let y = 100 + int(i / 5) * 50;
+          if (x < mouseX && x + 50 > mouseX) {
+            if (y < mouseY && y + 50 > mouseY) {
+              if (selected == -1) {
+                selected = i + 25;
+              } else {
+                exchange(selected, i + 25);
+                selected = -1;
+              }
+            }
+          }
+        }
+      }
+
+      function createSlotList(count) {
+        for (let i = 0; i < 50; i++) {
+          slotList[i] = 0;
+        }
+        let c = 0;
+        for (let i = 0; i < 50; i += 3) {
+          let numA = int(random(10, 30));
+          let numB = int(numA / 2);
+          let numC = numA - numB;
+          slotList[i] = numA;
+          slotList[i + 1] = numB;
+          slotList[i + 2] = numC;
+
+          c += 1;
+          if (c >= count) {
+            break;
+          }
+        }
+
+        for (let i = 0; i < 50; i++) {
+          let from = int(random(0, 50));
+          let to = int(random(0, 50));
+          let cache = slotList[from];
+          slotList[from] = slotList[to];
+          slotList[to] = cache;
+        }
+
+        if (isClear(slotList) == 1) {
+          return createSlotList(count);
+        }
+        return slotList;
+      }
+
+      function exchange(from, to) {
+        let cache = slotList[from];
+        slotList[from] = slotList[to];
+        slotList[to] = cache;
+      }
+
+      function levelToCount(level) {
+        let count = level;
+        if (count > 10) {
+          count = 15;
+        }
+        return level;
+      }
+      function isHit(px, py, pw, ph, ex, ey, ew, eh) {
+        if (px < ex + ew && px + pw > ex) {
+          if (py < ey + eh && py + ph > ey) {
+            return 1;
+          }
+        }
+        return 0;
+      }
+    </script>
+  </body>
+</html>

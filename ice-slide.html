@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <!-- keep the line below for OpenProcessing compatibility -->
+    <script src="https://openprocessing.org/openprocessing_sketch.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.1/p5.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.1/addons/p5.sound.min.js"></script>
+    <script src="mySketch.js"></script>
+    <script src="EffectManagers.js"></script>
+    <link rel="stylesheet" type="text/css" href="style.css" />
+    <!-- google font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Josefin+Sans:ital,wght@1,100;1,200&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+
+  <body>
+    <section id="app">
+      <sidemenu></sidemenu>
+      <main><h3>{{title}}</h3></main>
+    </section>
+    <link rel="stylesheet" href="style.css" />
+    <script src="https://cdn.jsdelivr.net/npm/vue@2"></script>
+    <script src="layout.js"></script>
+    <script>
+      var app = new Vue({
+        el: "#app",
+        data: {
+          title: "氷の床",
+        },
+      });
+    </script>
+
+    <script>
+      let x = 50;
+      let y = 50;
+      let dx = 0;
+      let dy = 0;
+      let flag = 0;
+      let sp = 5;
+      let clear_flag = 0;
+      let slotList = [];
+      let clearCount = 0;
+
+      let confettiManager;
+      let shadowManager;
+      function setup() {
+        createCanvas(600, 400);
+        // Googleフォントの読み込み
+        textFont("'Josefin Sans', sans-serif");
+        textStyle(ITALIC);
+
+        confettiManager = new ConfettiEffectManager();
+        shadowManager = new ShadowEffectManager();
+
+        initGame();
+      }
+      function draw() {
+        background(255, 200, 0);
+
+        let prevX = x;
+        let prevY = y;
+
+        x += dx * sp;
+        y += dy * sp;
+
+        for (let i = 0; i < 96; i++) {
+          let block_x = (i % 12) * 50;
+          let block_y = int(i / 12) * 50;
+
+          if (slotList[i] == 99) {
+            if (isHit(block_x, block_y, 50, 50, x, y, 30, 30) == 1) {
+              dx = 0;
+              dy = 0;
+              x = prevX;
+              y = prevY;
+              flag = 0;
+            }
+          }
+
+          if (slotList[i] == 1) {
+            if (flag == 0) {
+              if (isHit(block_x, block_y, 50, 50, x, y, 30, 30) == 1) {
+                if (clear_flag == 0) {
+                  clear_flag = 1;
+                  clearCount += 1;
+                  createConfetti();
+                }
+              }
+            }
+          }
+          fill(0, 200, 255);
+          if (slotList[i] == 99) {
+            fill(100);
+          }
+          if (slotList[i] == 1) {
+            fill(0, 255, 255);
+          }
+          if (slotList[i] == 2) {
+            // fill(255, 100, 0);
+          }
+          rect(block_x, block_y, 50, 50);
+          if (false) {
+            textAlign(CENTER, CENTER);
+            textSize(12);
+            fill(30);
+            text(i, block_x + 25, block_y + 25);
+          }
+        }
+
+        shadowManager.update();
+        shadowManager.add(x, y);
+
+        fill(255);
+        rect(x, y, 30, 30);
+        fill(30);
+        ellipse(x + 10, y + 10, 3, 3);
+        ellipse(x + 20, y + 10, 3, 3);
+
+        textAlign(RIGHT, CENTER);
+        textSize(24);
+        fill(255);
+        text("STAGE " + (clearCount + 1), width - 20, height - 20);
+
+        if (clear_flag == 1) {
+          fill(255, 100);
+          rect(0, 0, width, height);
+          textAlign(CENTER, CENTER);
+          textSize(64);
+          fill(50);
+          text("STAGE\n CLEAR!", width / 2, height / 2);
+        }
+
+        confettiManager.update();
+      }
+
+      function keyPressed() {
+        if (clear_flag == 0) {
+          if (flag == 0) {
+            if (keyCode == RIGHT_ARROW) {
+              dx = 1;
+              dy = 0;
+              flag = 1;
+            }
+            if (keyCode == LEFT_ARROW) {
+              dx = -1;
+              dy = 0;
+              flag = 1;
+            }
+            if (keyCode == UP_ARROW) {
+              dx = 0;
+              dy = -1;
+              flag = 1;
+            }
+            if (keyCode == DOWN_ARROW) {
+              dx = 0;
+              dy = 1;
+              flag = 1;
+            }
+          }
+        }
+        if (clear_flag == 1) {
+          initGame();
+        }
+      }
+
+      function createConfetti() {
+        for (let i = 0; i < 100; i++) {
+          confettiManager.add(width / 2, height / 2);
+        }
+      }
+
+      function isHit(px, py, pw, ph, ex, ey, ew, eh) {
+        if (px < ex + ew && px + pw > ex) {
+          if (py < ey + eh && py + ph > ey) {
+            return 1;
+          }
+        }
+        return 0;
+      }
+
+      function initGame() {
+        x = 50;
+        y = 50;
+        dx = 0;
+        dy = 0;
+        flag = 0;
+        sp = 5;
+        clear_flag = 0;
+        slotList = [
+          99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 0, 0, 0, 0, 99, 0,
+          0, 0, 0, 0, 99, 99, 0, 0, 99, 0, 0, 0, 0, 0, 0, 1, 99, 99, 0, 0, 0, 0,
+          0, 0, 0, 99, 0, 0, 99, 99, 0, 99, 0, 0, 0, 0, 0, 0, 0, 0, 99, 99, 0,
+          0, 0, 99, 0, 0, 0, 0, 0, 0, 99, 99, 0, 0, 0, 0, 0, 0, 99, 0, 0, 0, 99,
+          99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99,
+        ];
+        if (clearCount > 0) {
+          slotList = [
+            99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 99, 99, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 99, 99, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 99, 99, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 99,
+            99, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 99, 99, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99,
+          ];
+
+          makeSlotList(slotList, 13, 1, 0);
+        }
+      }
+
+      function makeSlotList(slotList, currentIndex, direction, loop) {
+        if (loop > 999) {
+          // 無限ループ防止
+          return;
+        }
+
+        for (let i = 0; i < 2; i++) {
+          // 一度通った道は印として2をつけておく。
+          slotList[currentIndex] = 2;
+          slotList[currentIndex + direction] = 2;
+        }
+        let newIndex = currentIndex + direction;
+        let directions = makeRandomDirections();
+        for (let i = 0; i < directions.length; i++) {
+          let targetIndex = newIndex + directions[i];
+          if (canPutLoad(slotList, targetIndex, directions[i]) == 0) {
+            continue;
+          }
+          if (directions[i] != direction) {
+            // 方向転換なのでブロックを作る。作ったブロックは一旦98に。
+            slotList[newIndex + direction] = 98;
+          }
+          // 再起処理
+          makeSlotList(slotList, targetIndex, directions[i], loop + 1);
+          return;
+        }
+
+        // 道を作れないようならば最後にゴールと壁を設置する
+        slotList[newIndex] = 1;
+        slotList[newIndex + direction] = 99;
+
+        for (let i = 0; i < slotList.length; i++) {
+          if (slotList[i] == 98) slotList[i] = 99;
+        }
+      }
+
+      function canPutLoad(slotList, targetIndex, direction) {
+        let count = 0;
+        for (let i = 0; i < 2; i++) {
+          let newIndex = targetIndex + direction * i;
+          if (newIndex < 0 || newIndex > slotList.length - 1) {
+            return 0;
+          }
+          if (slotList[newIndex] == 99) {
+            return 0;
+          }
+          if (slotList[newIndex] == 98) {
+            return 0;
+          }
+          if (slotList[newIndex] == 2) {
+            count += 1;
+          }
+        }
+        if (count == 2) {
+          // 全く同じ道を通るルートもなし。
+          return 0;
+        }
+        return 1;
+      }
+
+      function makeRandomDirections() {
+        let directions = [1, 12, -1, -12];
+        for (let i = 0; i < 99; i++) {
+          let from = int(random(0, directions.length));
+          let to = int(random(0, directions.length));
+          let cache = directions[from];
+          directions[from] = directions[to];
+          directions[to] = cache;
+        }
+
+        return directions;
+      }
+      class ConfettiEffectItem {
+        constructor() {
+          this.x = 0;
+          this.y = 0;
+          this.time = 0;
+          this.red = 0;
+          this.green = 0;
+          this.blue = 0;
+          this.angle = 0;
+          this.dx = 0;
+          this.dy = 0;
+        }
+      }
+      class ConfettiEffectManager {
+        constructor() {
+          this.itemList = [];
+        }
+        update() {
+          let itemList = this.itemList;
+          for (let i = 0; i < itemList.length; i++) {
+            let item = itemList[i];
+            item.time = item.time + 1;
+            item.dx *= 0.99;
+            item.dy += 0.1;
+            item.dy = min(item.dy, 5);
+            item.x = item.x + item.dx;
+            item.y = item.y + item.dy;
+            push();
+            translate(item.x, item.y);
+            let _rad = radians(item.angle);
+            rotate(_rad);
+            fill(item.red, item.green, item.blue);
+            noStroke();
+            rect(0, 0, 10 * cos(radians(item.time)), 20);
+            pop();
+            if (item.y > height) {
+              itemList.splice(i, 1);
+              i--;
+            }
+          }
+        }
+        add(x, y) {
+          let itemList = this.itemList;
+          let item = new ConfettiEffectItem();
+          item.x = x;
+          item.y = y;
+          item.time = random(1000);
+          item.red = random(100, 255);
+          item.green = random(100, 255);
+          item.blue = random(100, 255);
+          item.angle = random(0, 360);
+          item.dx = random(-5, 5);
+          item.dy = random(-30, -10);
+
+          itemList.push(item);
+        }
+      }
+
+      ////////////////////
+      // 残像
+      ////////////////////
+      class ShadowEffectItem {
+        constructor() {
+          this.x = 0;
+          this.y = 0;
+        }
+      }
+      class ShadowEffectManager {
+        constructor() {
+          this.itemList = [];
+        }
+        update() {
+          let itemList = this.itemList;
+          push();
+          for (let i = 0; i < itemList.length; i++) {
+            let s = itemList[i];
+            let alpha = 1 - i / 10;
+            noStroke();
+            fill(255, 255, 255, 50 * alpha);
+            rect(s.x, s.y, 30, 30);
+          }
+          pop();
+        }
+        add(x, y) {
+          let itemList = this.itemList;
+          let item = new ShadowEffectItem();
+          item.x = x;
+          item.y = y;
+          itemList.unshift(item);
+          if (itemList.length > 10) {
+            itemList.pop();
+          }
+        }
+      }
+    </script>
+  </body>
+</html>

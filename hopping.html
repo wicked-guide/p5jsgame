@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.2/p5.min.js"
+      integrity="sha512-rCZdHNB0AePry6kAnKAVFMRfWPmUXSo+/vlGtrOUvhsxD0Punm/xWbEh+8vppPIOzKB9xnk42yCRZ5MD/jvvjQ=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    ></script>
+  </head>
+  <body>
+    <section id="app">
+      <sidemenu></sidemenu>
+      <main><h3>{{title}}</h3></main>
+    </section>
+    <link rel="stylesheet" href="style.css" />
+    <script src="https://cdn.jsdelivr.net/npm/vue@2"></script>
+    <script src="layout.js"></script>
+    <script>
+      var app = new Vue({
+        el: "#app",
+        data: {
+          title: "ホッピング",
+        },
+      });
+    </script>
+    <script>
+      let x = 100;
+      let y = 200;
+      let dx = 0;
+      let dy = 0;
+      let angle = 90;
+      let angle_dir = 0;
+
+      let camera_x = 0;
+      let status = 0;
+      let t = 0;
+      let title_t = 0;
+
+      class Block {
+        constructor() {
+          this.x = 0;
+          this.y = 0;
+          this.type = 1;
+        }
+      }
+      let blockList = [];
+
+      function setup() {
+        createCanvas(600, 400);
+
+        // 初期化命令
+        init();
+      }
+      function draw() {
+        background(30);
+
+        // プレイヤーを動かす
+        if (status == 0) {
+          title_t = 0;
+        }
+        if (status <= 1) {
+          title_t += 1;
+          t += 1;
+          angle += angle_dir;
+          dx *= 0.99;
+          dy += 0.5;
+          x += dx;
+          y += dy;
+        }
+
+        // ホッピングの位置を算出する
+        let _arrowX =
+          cos(radians(angle)) * 50 * (0.5 + 0.5 * min(t / 15, 1)) + x;
+        let _arrowY =
+          sin(radians(angle)) * 50 * (0.5 + 0.5 * min(t / 15, 1)) + y;
+
+        // ブロックとのあたり判定
+        for (let i = 0; i < blockList.length; i++) {
+          let block = blockList[i];
+          if (_arrowX >= block.x && _arrowX <= block.x + 50) {
+            if (_arrowY >= block.y && _arrowY <= block.y + 50) {
+              t = 0;
+              if (block.type == 1) {
+                dx = cos(radians(angle)) * 15 * -1;
+                dy = sin(radians(angle)) * 15 * -1;
+              }
+              if (block.type == 2) {
+                status = 2;
+              }
+            }
+          }
+          if (x >= block.x && x <= block.x + 50) {
+            if (y >= block.y && y <= block.y + 50) {
+              status = 99;
+            }
+          }
+        }
+        if (x < 0) {
+          status = 99;
+        }
+
+        // プレイヤーの表示
+        push();
+        translate(x - camera_x, y);
+        rotate(radians(angle - 90));
+        fill(255);
+        rect(-15, -15, 30, 30);
+        fill(30);
+        ellipse(-5, -5, 5, 5);
+        ellipse(5, -5, 5, 5);
+        pop();
+
+        // ホッピングの表示
+        stroke(255);
+        fill(30);
+        line(x - camera_x, y, _arrowX - camera_x, _arrowY);
+        rect(_arrowX - 5 - camera_x, _arrowY - 5, 10, 10);
+
+        // ブロックの表示
+        for (let i = 0; i < blockList.length; i++) {
+          let block = blockList[i];
+          stroke(30);
+          fill(255);
+          if (block.type == 2) {
+            fill(255, 100, 0);
+          }
+
+          // 適当に縦に積み上げる
+          for (let _y = block.y; _y < height; _y += 50) {
+            rect(block.x - camera_x, _y, 50, 50);
+          }
+        }
+
+        // カメラの移動
+        camera_x = x - 300;
+        camera_x = max(camera_x, 0);
+
+        // スコアの表示
+        if (true) {
+          let goalX = 0;
+          for (let i = 0; i < blockList.length; i++) {
+            let block = blockList[i];
+            if (block.type == 2) {
+              goalX = block.x;
+              break;
+            }
+          }
+          let per = x / goalX;
+          per = constrain(per, 0, 1);
+
+          textAlign(CENTER, CENTER);
+          textSize(32);
+          fill(255);
+          text("あと" + (100 - parseInt(100 * per)) + "m", 100, 100);
+        }
+
+        // ダイアログの表示
+        if (status <= 1) {
+          let per = 1 - title_t / 60;
+          per = max(per, 0);
+          fill(0, 100 * per);
+          rect(0, 0, width, height);
+          textAlign(CENTER, CENTER);
+
+          fill(255, 255 * per);
+          noStroke();
+          textSize(64);
+          text("Hopping Man", width / 2, height / 2 - 50);
+          textSize(24);
+          text("-Hold left / right arrowkeys-", width / 2, height / 2 + 50);
+        }
+        if (status == 2) {
+          fill(0, 100);
+          rect(0, 0, width, height);
+          textAlign(CENTER, CENTER);
+          textSize(64);
+          fill(255);
+          noStroke();
+          text("Goal!", width / 2, height / 2);
+        }
+        if (status == 99) {
+          fill(0, 100);
+          rect(0, 0, width, height);
+          textAlign(CENTER, CENTER);
+          textSize(64);
+          fill(255);
+          text("GameOver", width / 2, height / 2);
+        }
+      }
+      function keyPressed() {
+        if (status == 0) {
+          status = 1;
+        }
+        if (status == 2) {
+          init();
+        }
+        if (status == 99) {
+          init();
+        }
+        if (keyCode == LEFT_ARROW) {
+          angle_dir = -1;
+        }
+        if (keyCode == RIGHT_ARROW) {
+          angle_dir = 1;
+        }
+      }
+
+      // 初期化命令
+      function init() {
+        x = 100;
+        y = 200;
+        dx = 0;
+        dy = 0;
+        angle = 90;
+        angle_dir = 0;
+
+        camera_x = 0;
+        status = 0;
+        t = 0;
+        title_t = 0;
+        blockList = createBlockList(100, hour() + minute());
+      }
+
+      // ステージを作成する命令
+      function createBlockList(_count, seed) {
+        // シード値によってステージを固定する
+        randomSeed(seed);
+        let blockList = [];
+        let lastYIndex = 0;
+        for (let i = 0; i < _count + 10; i++) {
+          let block = new Block();
+          block.x = i * 50;
+          block.y = 350;
+          if (i > 5) {
+            let yIndex = lastYIndex + int(random(-2, 2));
+            yIndex = constrain(yIndex, 0, 4);
+            lastYIndex = yIndex;
+            block.y += yIndex - 50 * yIndex;
+          }
+          if (i > _count) {
+            block.type = 2;
+          }
+          blockList.push(block);
+        }
+        return blockList;
+      }
+    </script>
+  </body>
+</html>

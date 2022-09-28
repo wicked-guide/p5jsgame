@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="utf-8" />
+	<!-- keep the line below for OpenProcessing compatibility -->
+	<script src="https://openprocessing.org/openprocessing_sketch.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/addons/p5.sound.min.js"></script>
+	<script src="mySketch.js"></script>
+	<link rel="stylesheet" type="text/css" href="style.css">
+</head>
+
+<body>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-giJF6kkoqNQ00vy+HMDP7azOuL0xtbfIcaT9wjKHr8RbDVddVHyTfAAsrekwKmP1" crossorigin="anonymous">
+  <section id="app">
+    <sidemenu></sidemenu>
+    <main><h3>{{title}}</h3>  <div class="container text-center">
+    <div id="canvas" class="my-5"><!--（ここがゲーム部分に差変わります。）--></div>
+  </div>
+  <!-- <div class="bg-dark mt-5 py-5 text-white">
+    <div class="container">
+      <div class="row my-5">
+        <div class="col-sm">
+          <h3 class="text-center">順よくタップしよう！</h3>
+          <div class="container">
+            <p class="my-3">25個のパネルの中からまずは「1」を見つけてタップしよう。<br>続いて「2」を、さらに「3」を。順に25個のパネルをタップしよう！</p>
+          </div>
+        </div>
+        <div class="col-sm">
+          <h3 class="text-center">タイムスコアを競おう！</h3>
+          <p>君は何秒でクリアできるかな？</p>
+        </div>
+        <div class="col-sm">
+          <h3 class="text-center">リプレイで振り返ろう！</h3>
+          <p>「R」キーでリプレイができるぞ！</p>
+        </div>
+      </div>
+    </div>
+  </div> -->
+</main>
+  </section>
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/vue@2"></script>
+  <script src="layout.js"></script>
+  <script>
+    var app = new Vue({
+      el: "#app",
+      data: {
+        title: "番号順にクリック",
+      },
+    });
+  </script>
+
+
+
+  <script>
+    let nakamiList = [];
+let target = 1;
+let W = 5;
+let H = 5;
+let t = 0;
+// 0=title, 1=game, 2=replay
+let status = 0;
+let historyList = [];
+function setup(){
+	createCanvas(600, 400).parent("canvas");
+	nakamiList = createNakamiList(W*H);
+	namakiList = shuffleList(nakamiList);
+}
+function draw(){
+	background(50);
+	if(status != 0){
+		if(target - 1 < W * H){
+			t += deltaTime / 1000;
+		}
+	}
+	if(status == 2){
+		t = min(t, historyList[historyList.length - 1]);
+	}
+	for(let yoko=0; yoko<W; yoko++){
+		for(let tate=0; tate<H; tate++){
+			let hakoban = tate * W + yoko;
+			let nakami = nakamiList[hakoban];
+			let x = 155 + 60 * yoko;
+			let y = 80 + 60 * tate;
+			fill(250, 200, 0);
+			
+			push();
+			translate(x + 25, y + 25);
+			if(nakami < target){
+				fill(100);
+				
+				let elapsedTime = t - historyList[nakami - 1];
+				let per = elapsedTime / 0.3;
+				per = min(per, 1);
+				rotate(radians(per * 360));
+				
+			}
+			rect(-25, -25, 50, 50, 5, 5);
+			textSize(32);
+			textAlign(CENTER, CENTER);
+			fill(50);
+			if(status == 0){
+				text("?", 0,  0);
+			}else{
+				text(nakami, 0, 0);
+			}
+			pop();
+		}
+	}
+	if(status == 2){
+		for(let i=0; i<historyList.length; i++){
+			if(historyList[i] <= t){
+				target = i + 2;
+			}
+		}
+	}
+	
+	
+	textSize(36);
+	textAlign(CENTER, CENTER);
+	fill(250);
+	text(t.toFixed(2), width / 2, 35);
+	
+	if(status == 0){
+		fill(255, 200);
+		rect(0, 0, width, height);
+		textSize(32);
+		fill(50);
+		if(int(frameCount / 30) % 2 == 0){
+			text("- Tap To Start -", width/2, height - 100);
+		}
+	}
+}
+function keyPressed(){
+	if(key == 'r'){
+		status = 2;
+		t = 0;
+		target = 1;
+	}
+}
+function mousePressed(){
+	if(status == 0){
+		status = 1;
+		return;
+	}
+	if(status == 2){
+		return;
+	}
+	for(let yoko=0; yoko<W; yoko++){
+		for(let tate=0; tate<H; tate++){
+			let hakoban = tate * W + yoko;
+			let nakami = nakamiList[hakoban];
+			let x = 155 + 60 * yoko;
+			let y = 80 + 60 * tate;
+			if(x < mouseX && x + 50 > mouseX){
+				if(y < mouseY && y + 50 > mouseY){
+					// あたった
+					if(nakami == target){
+						historyList.push(t);
+						target = target + 1;
+					}
+				}
+			}
+		}
+	}
+}
+
+function createNakamiList(count){
+	let list = [];
+	for(let i=0; i<count; i++){
+		list[i] = i + 1;
+	}
+	return list;
+}
+
+
+function shuffleList(list){
+	for(let i=0; i<999; i++){
+		let from = int(random(0, list.length));
+		let to = int(random(0, list.length));
+		let temp = list[from];
+		list[from] = list[to];
+		list[to] = temp;
+	}
+	return list;
+}
+  </script>
+</body>
+</html>
+
+</html>

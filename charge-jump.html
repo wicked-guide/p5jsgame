@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <!-- keep the line below for OpenProcessing compatibility -->
+    <script src="https://openprocessing.org/openprocessing_sketch.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/addons/p5.sound.min.js"></script>
+    <script src="mySketch.js"></script>
+    <link rel="stylesheet" type="text/css" href="style.css" />
+  </head>
+
+  <body>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta1/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+      integrity="sha384-giJF6kkoqNQ00vy+HMDP7azOuL0xtbfIcaT9wjKHr8RbDVddVHyTfAAsrekwKmP1"
+      crossorigin="anonymous"
+    />
+    <section id="app">
+      <sidemenu></sidemenu>
+      <main>
+        <h3>{{title}}</h3>
+        <div class="container text-center">
+          <div id="canvas" class="my-5">
+            <!--（ここがゲーム部分に差変わります。）-->
+          </div>
+        </div>
+        <div class="bg-dark mt-5 py-5 text-white">
+          <div class="container">
+            <h2 class="text-white text-center">- 遊び方 -</h2>
+            <div class="row my-5">
+              <div class="col-sm">
+                <h3 class="text-center">1. タップ中はパワーチャージ！</h3>
+                <div class="container">
+                  <p class="my-3">タップ中はパワーメーターが溜まるぞ！</p>
+                </div>
+              </div>
+              <div class="col-sm">
+                <h3 class="text-center">2. 指を離してジャンプ！</h3>
+                <p>チャージしたパワーを解き放て！</p>
+              </div>
+              <div class="col-sm">
+                <h3 class="text-center">3. 乗り越えろ！</h3>
+                <p>壁を乗り越えろ！</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </section>
+
+    <link rel="stylesheet" href="style.css" />
+    <script src="https://cdn.jsdelivr.net/npm/vue@2"></script>
+    <script src="layout.js"></script>
+    <script>
+      var app = new Vue({
+        el: "#app",
+        data: {
+          title: "ボール落下",
+        },
+      });
+    </script>
+
+    <script>
+      let x = 200;
+      let y = 200;
+      let dy = 0;
+      let p = 0;
+      let isPressed = 0;
+      let wall_x = 600;
+      let wall_y = 300;
+      let angle = 0;
+      let angle_speed = 0;
+      let walls = [];
+      let score = 0;
+      let status = 1;
+      function setup() {
+        createCanvas(600, 400).parent("canvas");
+        walls = createWalls();
+      }
+
+      function draw() {
+        background(30);
+
+        textSize(128);
+        textAlign(CENTER, CENTER);
+        fill(0, 150, 250);
+        text(score, width / 2, height / 2);
+        textSize(32);
+        text(getRank(score), width / 2, height / 2 + 100);
+
+        if (status == 1) {
+          dy = dy + 1;
+          y = y + dy;
+          angle += angle_speed;
+        }
+        if (y > 370) {
+          y = 370;
+          angle = 0;
+          angle_speed = 0;
+        }
+
+        push();
+        translate(x + 15, y + 15);
+
+        rotate(radians(angle));
+
+        let w = 30 + 10 * getPower();
+        let h = 30 - 10 * getPower();
+        fill(255);
+        rect(-w / 2, 15 - h, w, h);
+        pop();
+
+        if (isPressed == 1) {
+          p = p + 1;
+          if (getPower() > 1) {
+            p = 0;
+          }
+        }
+        fill(255);
+        rect(x, y - 10, 30, 5);
+        fill(200, 100, 100);
+        rect(x, y - 10, 30 * getPower(), 5);
+
+        let hasFinished = false;
+        for (let i = 0; i < walls.length; i++) {
+          if (isHit(x, y, 30, 30, walls[i].x, walls[i].y, 50, 300) == 1) {
+            status = 99;
+          }
+
+          if (status == 1) {
+            walls[i].x -= 5;
+          }
+
+          if (walls[i].x < -50) {
+            hasFinished = true;
+          }
+          fill(200);
+          rect(walls[i].x, walls[i].y, 50, 300);
+        }
+        if (hasFinished) {
+          score += 1;
+          walls = createWalls();
+        }
+      }
+
+      function mousePressed() {
+        if (status == 99) {
+          reset();
+          return;
+        }
+        isPressed = 1;
+      }
+      function mouseReleased() {
+        isPressed = 0;
+        dy = -30 * getPower();
+        angle_speed = 20 * getPower();
+        isGround = 0;
+        p = 0;
+      }
+
+      function reset() {
+        score = 0;
+        walls = createWalls();
+        status = 1;
+      }
+
+      function getPower() {
+        return p / 30;
+      }
+
+      function createWalls() {
+        let walls = [];
+        let _x = 600;
+        let _y = random(-300, -150);
+        let space = 200;
+        walls.push(createVector(_x, _y));
+        walls.push(createVector(_x, _y + 300 + space));
+        return walls;
+      }
+
+      function getRank(score) {
+        let list = [
+          "E",
+          "D",
+          "C",
+          "B",
+          "B+",
+          "A",
+          "A+",
+          "S",
+          "S+",
+          "S++",
+          "MASTER",
+          "GOD",
+        ];
+        let bango = int(score / 2);
+        if (bango > list.length - 1) {
+          bango = list.length - 1;
+        }
+        return list[bango];
+      }
+
+      function isHit(px, py, pw, ph, ex, ey, ew, eh) {
+        if (px < ex + ew && px + pw > ex) {
+          if (py < ey + eh && py + ph > ey) {
+            return 1;
+          }
+        }
+        return 0;
+      }
+    </script>
+  </body>
+</html>

@@ -1,0 +1,16 @@
+body {
+  margin: 0;
+}
+#app {
+  display: flex;
+}
+
+nav {
+  padding: 1rem;
+  background-color: lavender;
+  user-select: none;
+}
+
+main {
+  padding: 2rem;
+}
